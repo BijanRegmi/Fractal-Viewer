@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.lib import rot90
 from fractal import Fractal
 import cv2
 
@@ -45,34 +46,34 @@ class mandelbrot(Fractal):
             return self.image
     
     def Colored(self):
+        s = self.config['IMAGE_SIZE']
+        mI = self.config['ITERS']
+
         mask = np.ones_like(self.constant, dtype=bool)
-        itercounts = np.zeros((self.config['IMAGE_SIZE'], self.config['IMAGE_SIZE']), np.uint8)
+        itercounts = np.zeros((s, s), np.uint8)
         
-        for i in range(self.config['ITERS']):
+        for i in range(1, mI+1):
             self.z[mask] = self.z[mask] * self.z[mask] + self.constant[mask]
             mask[np.abs(self.z) > 2] = False
             itercounts[mask] = i
-
-        quotient = itercounts/self.config['ITERS']*255
         
-        factor = np.power(itercounts/self.config['ITERS'], 0.5)*255
+        
+        self.image = np.zeros((s, s, 3))
 
-        r = np.where(quotient>0.5*255, factor, 0)
-        g = np.where(quotient>0.5*255, 1, factor)
-        b = np.where(quotient>0.5*255, factor, 0)
+        hmi = mI/2 - 1
+        for idx, x in np.ndenumerate(itercounts):
+            rnd = x*255/mI
+            if (x == mI):
+                col = [0,0,0]
+            elif (x == hmi):
+                col = [255,rnd,255]
+            else:
+                col = [0, rnd, 0]
 
-        r[itercounts == self.config['ITERS']-1] = 0
-        g[itercounts == self.config['ITERS']-1] = 0
-        b[itercounts == self.config['ITERS']-1] = 0
-
-        self.image = np.stack((r,g,b),-1)
-
+            self.image[idx[0]][idx[1]] = col
         self.image = np.uint8(np.rot90(self.image))
-
         return self.image
-
-        
-        
+            
 
 if __name__=="__main__":
     params = {'IMAGE_SIZE': 1080, 'SET_X': -2, 'SET_Y': -2, 'SET_SIZE': 4, 'ITERS': 100}
